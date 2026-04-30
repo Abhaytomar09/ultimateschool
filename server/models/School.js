@@ -1,6 +1,14 @@
 const mongoose = require('mongoose');
 
 const SchoolSchema = new mongoose.Schema({
+    // Human-readable school code users enter at login (e.g. SCH001)
+    schoolCode: {
+        type: String,
+        required: true,
+        unique: true,
+        uppercase: true,
+        trim: true,
+    },
     name: {
         type: String,
         required: true,
