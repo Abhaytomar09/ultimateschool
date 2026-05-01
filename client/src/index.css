@@ -667,10 +667,10 @@ tr:hover td { background: rgba(255,255,255,0.03); color: var(--text-primary); }
   top: calc(100% + 6px);
   left: 0;
   right: 0;
-  background: #111827;
-  border: 1px solid var(--border);
+  background: rgba(15, 23, 42, 0.98); /* Brighter dark background */
+  border: 1px solid rgba(59, 130, 246, 0.3); /* Blue tinted border */
   border-radius: var(--radius);
-  box-shadow: 0 16px 48px rgba(0,0,0,0.65), 0 0 0 1px rgba(59,130,246,.08);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.8), 0 0 16px rgba(59,130,246,.15);
   z-index: 200;
   list-style: none;
   overflow: hidden;
@@ -691,21 +691,21 @@ tr:hover td { background: rgba(255,255,255,0.03); color: var(--text-primary); }
   gap: 10px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: background .12s;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: all .2s;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .school-dropdown-item:last-child { border-bottom: none; }
 .school-dropdown-item:hover {
-  background: var(--blue-dim);
+  background: linear-gradient(90deg, rgba(59,130,246,0.2), transparent);
 }
-.school-dropdown-item:hover .sdi-name { color: var(--text-primary); }
-.school-dropdown-item:hover .sdi-code { border-color: rgba(59,130,246,.4); color: var(--blue-light); }
+.school-dropdown-item:hover .sdi-name { color: #FFFFFF; font-weight: 700; }
+.school-dropdown-item:hover .sdi-code { background: var(--blue); color: #FFF; border-color: var(--blue); }
 
 /* School name inside dropdown */
 .sdi-name {
-  font-size: .88rem;
+  font-size: .95rem;
   font-weight: 600;
-  color: var(--text-secondary);
+  color: #E2E8F0; /* Brighter default color */
   flex: 1;
   min-width: 0;
   white-space: nowrap;
@@ -717,16 +717,16 @@ tr:hover td { background: rgba(255,255,255,0.03); color: var(--text-primary); }
 /* School code chip inside dropdown */
 .sdi-code {
   font-family: var(--font-mono);
-  font-size: .68rem;
+  font-size: .75rem;
   font-weight: 700;
-  color: var(--text-muted);
-  background: rgba(255,255,255,0.05);
-  border: 1px solid var(--border);
-  padding: 2px 8px;
+  color: var(--blue-light);
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.3);
+  padding: 3px 10px;
   border-radius: var(--radius-full);
   flex-shrink: 0;
-  letter-spacing: .04em;
-  transition: all .12s;
+  letter-spacing: .05em;
+  transition: all .2s;
 }
 
 /* Empty state inside dropdown */
@@ -735,8 +735,8 @@ tr:hover td { background: rgba(255,255,255,0.03); color: var(--text-primary); }
   align-items: center;
   gap: 10px;
   padding: 16px;
-  font-size: .83rem;
-  color: var(--text-muted);
+  font-size: .9rem;
+  color: #94A3B8;
   font-style: italic;
 }
 

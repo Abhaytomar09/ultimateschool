@@ -2,6 +2,7 @@ const User = require('../models/User');
 const School = require('../models/School');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -38,26 +39,26 @@ const registerSchoolAndAdmin = async (req, res) => {
     const { schoolName, schoolCode, address, contactEmail, adminName, adminEmail, adminPassword } = req.body;
 
     if (!schoolName || !schoolCode || !address || !adminName || !adminEmail || !adminPassword) {
-        return res.status(400).json({ message: 'All fields are required.' });
+        return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
     try {
         // Prevent duplicate school codes
         const codeExists = await School.findOne({ schoolCode: schoolCode.toUpperCase() });
         if (codeExists) {
-            return res.status(400).json({ message: 'School code already in use. Choose a different code.' });
+            return res.status(400).json({ success: false, message: 'School code already in use. Choose a different code.' });
         }
 
         // Prevent duplicate school names
         const nameExists = await School.findOne({ name: schoolName });
         if (nameExists) {
-            return res.status(400).json({ message: 'A school with this name already exists.' });
+            return res.status(400).json({ success: false, message: 'A school with this name already exists.' });
         }
 
         // Prevent duplicate admin email (globally unique)
         const adminExists = await User.findOne({ email: adminEmail.toLowerCase() });
         if (adminExists) {
-            return res.status(400).json({ message: 'Admin email already registered.' });
+            return res.status(400).json({ success: false, message: 'Admin email already registered.' });
         }
 
         const school = await School.create({
@@ -82,6 +83,7 @@ const registerSchoolAndAdmin = async (req, res) => {
         const token = generateToken(admin, school.schoolCode);
 
         return res.status(201).json({
+            success: true,
             message: 'School registered successfully.',
             schoolId:   school._id,
             schoolCode: school.schoolCode,
@@ -95,7 +97,7 @@ const registerSchoolAndAdmin = async (req, res) => {
 
     } catch (error) {
         console.error('[registerSchoolAndAdmin]', error);
-        return res.status(500).json({ message: 'Server error. Please try again.' });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
@@ -106,16 +108,16 @@ const registerUser = async (req, res) => {
     const schoolId = req.user.schoolId;   // from JWT via protect middleware
 
     if (!role || !name || !email || !password) {
-        return res.status(400).json({ message: 'name, email, password and role are required.' });
+        return res.status(400).json({ success: false, message: 'name, email, password and role are required.' });
     }
 
     try {
         const school = await School.findById(schoolId);
-        if (!school) return res.status(404).json({ message: 'School not found.' });
+        if (!school) return res.status(404).json({ success: false, message: 'School not found.' });
 
         // Email must be globally unique
         const userExists = await User.findOne({ email: email.toLowerCase() });
-        if (userExists) return res.status(400).json({ message: 'Email already registered.' });
+        if (userExists) return res.status(400).json({ success: false, message: 'Email already registered.' });
 
         // Build prefix
         let prefix = '';
@@ -126,7 +128,7 @@ const registerUser = async (req, res) => {
             prefix = parentType === 'mother' ? 'pm' : 'pf';
             counterKey = 'parent';
         } else if (role === 'admin')  prefix = 'ad';
-        else return res.status(400).json({ message: 'Invalid role.' });
+        else return res.status(400).json({ success: false, message: 'Invalid role.' });
 
         // Atomically increment counter
         school.idCounters[counterKey] += 1;
@@ -147,6 +149,7 @@ const registerUser = async (req, res) => {
         });
 
         return res.status(201).json({
+            success: true,
             userId:   user._id,
             customId: user.customId.toUpperCase(),
             name:     user.name,
@@ -156,7 +159,7 @@ const registerUser = async (req, res) => {
 
     } catch (error) {
         console.error('[registerUser]', error);
-        return res.status(500).json({ message: 'Server error. Please try again.' });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
@@ -174,7 +177,7 @@ const loginUser = async (req, res) => {
 
     // Basic field validation
     if (!schoolCode || !userId || !password) {
-        return res.status(400).json({ message: 'schoolCode, userId and password are required.' });
+        return res.status(400).json({ success: false, message: 'schoolCode, userId and password are required.' });
     }
 
     try {
@@ -182,7 +185,7 @@ const loginUser = async (req, res) => {
         const school = await School.findOne({ schoolCode: schoolCode.toUpperCase() });
         if (!school) {
             // Generic error — don't reveal whether school or user is wrong
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
 
         // Step 2 — Find user scoped to this school only (compound query = no cross-tenant leak)
@@ -192,13 +195,13 @@ const loginUser = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
 
         // Step 3 — Verify password
         const passwordMatch = await bcrypt.compare(password, user.password);
         if (!passwordMatch) {
-            return res.status(401).json({ message: 'Invalid credentials.' });
+            return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
 
         // Step 4 — Role sanity check (ID prefix must match stored role)
@@ -212,6 +215,7 @@ const loginUser = async (req, res) => {
         const token = generateToken(user, school.schoolCode);
 
         return res.json({
+            success: true,
             token,
             userId:     user._id,
             schoolId:   school._id,
@@ -224,7 +228,7 @@ const loginUser = async (req, res) => {
 
     } catch (error) {
         console.error('[loginUser]', error);
-        return res.status(500).json({ message: 'Server error. Please try again.' });
+        return res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
@@ -241,11 +245,54 @@ const getSchoolByCode = async (req, res) => {
             { schoolCode: req.params.code.toUpperCase() },
             'schoolCode name contactEmail'
         );
-        if (!school) return res.status(404).json({ message: 'School not found.' });
-        return res.json({ schoolCode: school.schoolCode, schoolName: school.name });
+        if (!school) return res.status(404).json({ success: false, message: 'School not found.' });
+        return res.json({ success: true, schoolCode: school.schoolCode, schoolName: school.name });
     } catch (error) {
         console.error('[getSchoolByCode]', error);
-        return res.status(500).json({ message: 'Server error.' });
+        return res.status(500).json({ success: false, message: 'Server error.' });
+    }
+};
+
+/**
+ * POST /api/auth/set-password/:token
+ * Validates the single-use token and sets the user's password.
+ */
+const setPassword = async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters long.' });
+        }
+
+        // Hash the incoming raw token to compare against DB
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        // Find user with this token and ensure it's not expired
+        const user = await User.findOne({
+            setPasswordToken: hashedToken,
+            setPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: 'Password setup link is invalid or has expired.' });
+        }
+
+        // Set new password
+        user.password = await bcrypt.hash(password, 10);
+        
+        // Clear the token fields (single-use)
+        user.setPasswordToken = undefined;
+        user.setPasswordExpires = undefined;
+
+        await user.save();
+
+        res.json({ success: true, message: 'Password has been set successfully. You can now log in.' });
+
+    } catch (error) {
+        console.error('[setPassword]', error);
+        res.status(500).json({ success: false, message: 'Server error. Please try again.' });
     }
 };
 
@@ -254,4 +301,5 @@ module.exports = {
     registerUser,
     loginUser,
     getSchoolByCode,
+    setPassword,
 };

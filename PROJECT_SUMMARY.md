@@ -1,5 +1,5 @@
 # 🏫 UltimateSchool — Complete Project Summary
-**Last Updated:** 30 April 2026 · 02:05 AM IST
+**Last Updated:** 1 May 2026 · 02:35 PM IST
 
 ---
 
@@ -114,6 +114,7 @@ Ranks are calculated across all sections of a class (e.g., all Class 10 sections
 - Recent users table with role badges
 - Fee pending alert list with urgency (days left)
 - Add user form with auto-generated ID preview
+- **Automated secure email notifications with 24-hour "Set Password" links for new users**
 - Offline payment entry (Cash/UPI/Cheque/NEFT/DD)
 - Classes performance grid
 - School notice broadcaster

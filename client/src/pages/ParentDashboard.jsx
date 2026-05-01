@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { AppShell, Icon } from '../components/AppShell';
 import { CountUp, ProgressRing } from '../components/Widgets';
 import { useAuth } from '../context/AuthContext';
@@ -11,62 +12,43 @@ const NAV = [
   { id:'messages',   label:'Message',      icon:'message' },
 ];
 
-const CHILD = {
-  name:'Ankit Verma', id:'ST0001', class:'10A',
-  att: 68, rank:12, total:180,
-  fees:{ annual:18000, paid:12000, pending:6000 },
-  subjects:[
-    { name:'Mathematics', score:62, color:'var(--blue)',   topics:[{t:'Algebra',s:38},{t:'Geometry',s:72}] },
-    { name:'Physics',     score:78, color:'var(--purple)', topics:[{t:'Mechanics',s:80},{t:'Optics',s:76}] },
-    { name:'English',     score:85, color:'var(--amber)',  topics:[{t:'Grammar',s:90},{t:'Essay',s:80}] },
-    { name:'Chemistry',   score:44, color:'var(--green)',  topics:[{t:'Thermodynamics',s:40},{t:'Organic',s:48}] },
-  ],
-};
-
-const ATT_CALENDAR = [
-  [1,'P'],[2,'P'],[3,'A'],[4,'P'],[5,'P'],
-  [6,'P'],[7,'P'],[8,'A'],[9,'A'],[10,'P'],
-  [11,'P'],[12,'L'],[13,'P'],[14,'A'],[15,'P'],
-  [16,'P'],[17,'P'],[18,'P'],[19,'A'],[20,'P'],
-  [21,'P'],[22,'P'],[23,'A'],[24,'P'],[25,'P'],
-  [26,'P'],[27,'P'],[28,'A'],[29,'P'],[30,'P'],
-];
-
-function Home({ user }) {
-  const att = CHILD.att;
+function Home({ user, child }) {
+  if (!child) return <div className="fade-up">Select a child or wait for data...</div>;
+  const att = child.att;
+  
   return (
     <div className="fade-up">
       <div style={{ marginBottom:24 }}>
         <h2 style={{ fontSize:'1.5rem' }}>नमस्ते, {user?.name?.split(' ')[0]} 👨‍👩‍👧</h2>
         <p style={{ fontFamily:'var(--font-mono)', fontSize:'.8rem', marginTop:4 }}>
-          Monitoring: <strong style={{ color:'var(--blue-light)' }}>{CHILD.name}</strong> &nbsp;·&nbsp; Class {CHILD.class} &nbsp;·&nbsp; <span className="id-badge">{CHILD.id}</span>
+          Monitoring: <strong style={{ color:'var(--blue-light)' }}>{child.name}</strong> &nbsp;·&nbsp; <span className="id-badge">{child.id}</span>
         </p>
       </div>
 
       {/* Critical alerts */}
       {att < 75 && (
         <div className="alert alert-rose" style={{ marginBottom:12 }}>
-          ⚠️ <strong>{CHILD.name}'s attendance is {att}%</strong> — below the 75% minimum. Exam eligibility at risk. Please ensure regular attendance.
+          ⚠️ <strong>{child.name}'s attendance is {att}%</strong> — below the 75% minimum. Exam eligibility at risk. Please ensure regular attendance.
         </div>
       )}
-      {CHILD.fees.pending > 0 && (
+      {child.fees.pending > 0 && (
         <div className="alert alert-amber" style={{ marginBottom:20 }}>
-          💰 Fee pending: <strong>₹ {CHILD.fees.pending.toLocaleString('en-IN')}</strong> — Due date: <strong>10-05-2026</strong>
+          💰 Fee pending: <strong>₹ {child.fees.pending.toLocaleString('en-IN')}</strong> — Due date: <strong>Soon</strong>
         </div>
       )}
 
       <div className="grid gap-4 stagger" style={{ gridTemplateColumns:'repeat(4,1fr)', marginBottom:24 }}>
         {[
           { icon:'✅', val:att,        label:'Attendance',    sub:att<75?'⚠️ Below 75%':'On track',  color:att<75?'var(--rose)':'var(--green)', dim:att<75?'var(--rose-dim)':'var(--green-dim)' },
-          { icon:'🏆', val:CHILD.rank, label:'Class Rank',    sub:`of ${CHILD.total} students`,        color:'var(--blue)',   dim:'var(--blue-dim)' },
-          { icon:'✅', val:'',         label:'Fees Paid',     sub:'Annual 2025–26',                   color:'var(--green)',  dim:'var(--green-dim)' },
-          { icon:'⏳', val:'',         label:'Fees Pending',  sub:'Due 10-05-2026',                   color:'var(--rose)',   dim:'var(--rose-dim)' },
+          { icon:'🏆', val:child.rank, label:'Class Rank',    sub:`Performance`,        color:'var(--blue)',   dim:'var(--blue-dim)' },
+          { icon:'✅', val:'',         label:'Fees Paid',     sub:'Annual',                   color:'var(--green)',  dim:'var(--green-dim)' },
+          { icon:'⏳', val:'',         label:'Fees Pending',  sub:'Due Soon',                   color:'var(--rose)',   dim:'var(--rose-dim)' },
         ].map((s,i) => (
           <div key={i} className="stat-card fade-up">
             <div className="stat-icon" style={{ background:s.dim, color:s.color }}>{s.icon}</div>
             <div>
               <div className="stat-value" style={{ color:s.color, fontSize:'1.4rem' }}>
-                {i===0 ? <><CountUp to={att}/>%</> : i===1 ? <CountUp to={CHILD.rank}/> : i===2 ? `₹ ${(CHILD.fees.paid/1000)}K` : `₹ ${(CHILD.fees.pending/1000)}K`}
+                {i===0 ? <><CountUp to={att}/>%</> : i===1 ? child.rank : i===2 ? `₹ ${(child.fees.paid/1000).toFixed(1)}K` : `₹ ${(child.fees.pending/1000).toFixed(1)}K`}
               </div>
               <div className="stat-label">{s.label}</div>
               <div className="stat-sub">{s.sub}</div>
@@ -79,22 +61,18 @@ function Home({ user }) {
         {/* Subject performance */}
         <div className="glass-card" style={{ padding:20 }}>
           <h3 style={{ marginBottom:16 }}>📊 Subject Performance</h3>
-          {CHILD.subjects.map(s => (
+          {child.subjects.map(s => (
             <div key={s.name} style={{ marginBottom:16 }}>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:'.85rem', marginBottom:6 }}>
                 <span style={{ fontWeight:600, color:'var(--text-primary)' }}>{s.name}</span>
-                <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:s.color }}>{s.score}%</span>
+                <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color: s.color || 'var(--blue)' }}>{s.score}%</span>
               </div>
               <div className="progress-bar">
-                <div className="progress-fill" style={{ width:`${s.score}%`, background:s.color }}/>
+                <div className="progress-fill" style={{ width:`${s.score}%`, background:s.color || 'var(--blue)' }}/>
               </div>
-              {s.topics.filter(t=>t.s<50).map(t => (
-                <div key={t.t} style={{ fontSize:'.7rem', color:'var(--rose)', marginTop:4 }}>
-                  ⚠️ Weak in <strong>{t.t}</strong> ({t.s}%) — Arrange extra practice
-                </div>
-              ))}
             </div>
           ))}
+          {child.subjects.length === 0 && <span style={{color:'var(--text-muted)'}}>No recent marks.</span>}
         </div>
 
         {/* Suggestions */}
@@ -104,19 +82,15 @@ function Home({ user }) {
             {att < 75 && (
               <div style={{ padding:12, background:'var(--rose-dim)', border:'1px solid rgba(244,63,94,.2)', borderRadius:8 }}>
                 <div style={{ fontWeight:600, fontSize:'.82rem', color:'var(--rose)', marginBottom:4 }}>🚨 Attendance Priority</div>
-                <div style={{ fontSize:'.78rem', color:'var(--text-secondary)' }}>Only {att}% attendance. {Math.ceil((0.75*120 - 0.01*att*120) / 0.25)} more classes required to reach 75% minimum.</div>
+                <div style={{ fontSize:'.78rem', color:'var(--text-secondary)' }}>Only {att}% attendance. Please ensure regular classes.</div>
               </div>
             )}
-            {CHILD.subjects.filter(s=>s.score<50).map(s => (
+            {child.subjects.filter(s=>s.score<50).map(s => (
               <div key={s.name} style={{ padding:12, background:'var(--amber-dim)', border:'1px solid rgba(245,158,11,.2)', borderRadius:8 }}>
                 <div style={{ fontWeight:600, fontSize:'.82rem', color:'var(--amber)', marginBottom:4 }}>📌 {s.name}</div>
                 <div style={{ fontSize:'.78rem', color:'var(--text-secondary)' }}>Score {s.score}% — Consider tuition or additional practice sessions.</div>
               </div>
             ))}
-            <div style={{ padding:12, background:'var(--green-dim)', border:'1px solid rgba(16,185,129,.2)', borderRadius:8 }}>
-              <div style={{ fontWeight:600, fontSize:'.82rem', color:'var(--green)', marginBottom:4 }}>✅ English Strength</div>
-              <div style={{ fontSize:'.78rem', color:'var(--text-secondary)' }}>{CHILD.name} is performing well (85%). Encourage reading and writing practice to maintain.</div>
-            </div>
           </div>
         </div>
       </div>
@@ -124,28 +98,30 @@ function Home({ user }) {
   );
 }
 
-function AttCalendar() {
+function AttCalendar({ child }) {
+  if (!child) return null;
   const clr = { P:'var(--green)', A:'var(--rose)', L:'var(--amber)' };
   const bg  = { P:'var(--green-dim)', A:'var(--rose-dim)', L:'var(--amber-dim)' };
   const lbl = { P:'Present', A:'Absent', L:'Late' };
-  const total = ATT_CALENDAR.length;
-  const present = ATT_CALENDAR.filter(d=>d[1]==='P').length;
-  const absent  = ATT_CALENDAR.filter(d=>d[1]==='A').length;
-  const late    = ATT_CALENDAR.filter(d=>d[1]==='L').length;
-  const pct = Math.round((present/total)*100);
+  
+  const total = child.attCalendar.length;
+  const present = child.attCalendar.filter(d=>d[1]==='P').length;
+  const absent  = child.attCalendar.filter(d=>d[1]==='A').length;
+  const late    = child.attCalendar.filter(d=>d[1]==='L').length;
+  const pct = child.att;
+
   return (
     <div className="fade-up">
-      <div className="page-header"><h2>📆 Attendance Calendar</h2><p>{CHILD.name} · Class {CHILD.class} · April 2026</p></div>
+      <div className="page-header"><h2>📆 Attendance Calendar</h2><p>{child.name} · Last 30 Days</p></div>
       <div style={{ display:'grid', gridTemplateColumns:'1fr auto', gap:20 }}>
         <div className="glass-card" style={{ padding:20 }}>
           <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:8 }}>
             {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
               <div key={d} style={{ textAlign:'center', fontSize:'.68rem', color:'var(--text-muted)', fontWeight:700, padding:'4px 0', fontFamily:'var(--font-mono)' }}>{d}</div>
             ))}
-            {/* spacer for April 1 = Wednesday (offset 2) */}
             {[0,1].map(i => <div key={i}/>)}
-            {ATT_CALENDAR.map(([day, status]) => (
-              <div key={day} style={{ textAlign:'center', padding:'10px 4px', borderRadius:8, background:bg[status], color:clr[status], fontSize:'.8rem', fontWeight:700, fontFamily:'var(--font-mono)', border:`1px solid ${clr[status]}22`, cursor:'default' }}>
+            {child.attCalendar.map(([day, status], i) => (
+              <div key={i} style={{ textAlign:'center', padding:'10px 4px', borderRadius:8, background:bg[status], color:clr[status], fontSize:'.8rem', fontWeight:700, fontFamily:'var(--font-mono)', border:`1px solid ${clr[status]}22`, cursor:'default' }}>
                 {day}
               </div>
             ))}
@@ -176,17 +152,18 @@ function AttCalendar() {
   );
 }
 
-function FeesPage() {
-  const { fees } = CHILD;
-  const pct = Math.round((fees.paid/fees.annual)*100);
+function FeesPage({ child }) {
+  if(!child) return null;
+  const { fees } = child;
+  const pct = fees.annual > 0 ? Math.round((fees.paid/fees.annual)*100) : 100;
   return (
     <div className="fade-up">
-      <div className="page-header"><h2>💰 Fee Management</h2><p>{CHILD.name} · Class {CHILD.class} · ₹ INR</p></div>
+      <div className="page-header"><h2>💰 Fee Management</h2><p>{child.name} · ₹ INR</p></div>
       <div className="grid gap-4" style={{ gridTemplateColumns:'repeat(3,1fr)', marginBottom:20 }}>
-        {[['Annual Fee','₹ 18,000','var(--blue)'],['Paid','₹ 12,000','var(--green)'],['Pending','₹ 6,000','var(--rose)']].map(([l,v,c]) => (
+        {[['Annual Fee',fees.annual,'var(--blue)'],['Paid',fees.paid,'var(--green)'],['Pending',fees.pending,'var(--rose)']].map(([l,v,c]) => (
           <div key={l} className="glass-card" style={{ padding:20 }}>
             <div style={{ fontSize:'.7rem', color:'var(--text-muted)', fontFamily:'var(--font-mono)', marginBottom:6 }}>{l}</div>
-            <div style={{ fontSize:'1.5rem', fontWeight:800, fontFamily:'var(--font-head)', color:c }}>{v}</div>
+            <div style={{ fontSize:'1.5rem', fontWeight:800, fontFamily:'var(--font-head)', color:c }}>₹ {v.toLocaleString('en-IN')}</div>
           </div>
         ))}
       </div>
@@ -201,32 +178,30 @@ function FeesPage() {
       </div>
       {fees.pending > 0 && (
         <div className="alert alert-rose" style={{ marginBottom:20 }}>
-          ⚠️ ₹ {fees.pending.toLocaleString('en-IN')} pending. Due: <strong>10-05-2026</strong>. Late fee: ₹ 200/day thereafter.
+          ⚠️ ₹ {fees.pending.toLocaleString('en-IN')} pending. Please pay soon to avoid late fees.
         </div>
       )}
       <div className="glass-card" style={{ padding:0, overflow:'hidden' }}>
         <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border)' }}><h3>Payment Timeline</h3></div>
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Month</th><th>Amount</th><th>Mode</th><th>Date</th><th>Status</th><th>Receipt</th></tr></thead>
+            <thead><tr><th>Fee Type</th><th>Amount Due</th><th>Amount Paid</th><th>Due Date</th><th>Status</th><th>Receipt</th></tr></thead>
             <tbody>
-              {[['March 2026',4000,'UPI','05-03-2026','Paid'],['February 2026',4000,'Cash','03-02-2026','Paid'],['January 2026',4000,'NEFT','02-01-2026','Paid']].map(([m,a,md,d,s]) => (
-                <tr key={m}>
-                  <td style={{ fontWeight:500, color:'var(--text-primary)' }}>{m}</td>
-                  <td style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--green)' }}>₹ {a.toLocaleString('en-IN')}</td>
-                  <td>{md}</td>
-                  <td style={{ fontFamily:'var(--font-mono)' }}>{d}</td>
-                  <td><span className="badge badge-green">{s}</span></td>
-                  <td><button className="btn btn-ghost btn-sm">📄</button></td>
+              {fees.history.map(f => (
+                <tr key={f._id} style={{ background: f.status==='Pending' ? 'rgba(244,63,94,0.06)' : 'transparent' }}>
+                  <td style={{ fontWeight:500, color: f.status==='Pending'?'var(--rose)':'var(--text-primary)' }}>{f.feeType}</td>
+                  <td style={{ fontFamily:'var(--font-mono)', fontWeight:700, color: f.status==='Pending'?'var(--rose)':'var(--text-primary)' }}>₹ {f.amountDue.toLocaleString('en-IN')}</td>
+                  <td style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--green)' }}>₹ {f.amountPaid.toLocaleString('en-IN')}</td>
+                  <td style={{ fontFamily:'var(--font-mono)', color: f.status==='Pending'?'var(--rose)':'var(--text-muted)' }}>{new Date(f.dueDate).toLocaleDateString()}</td>
+                  <td><span className={`badge ${f.status==='Paid'?'badge-green':'badge-rose'}`}>{f.status}</span></td>
+                  <td>
+                      {f.status==='Pending' 
+                      ? <button className="btn btn-primary btn-sm" onClick={() => alert('Razorpay / Stripe integration goes here')}>Pay Now</button> 
+                      : <button className="btn btn-ghost btn-sm">📄</button>}
+                  </td>
                 </tr>
               ))}
-              <tr style={{ background:'rgba(244,63,94,0.06)' }}>
-                <td style={{ color:'var(--rose)', fontWeight:600 }}>April 2026</td>
-                <td style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:'var(--rose)' }}>₹ 6,000</td>
-                <td>—</td><td style={{ fontFamily:'var(--font-mono)', color:'var(--rose)' }}>Due: 10-05-2026</td>
-                <td><span className="badge badge-rose">Pending</span></td>
-                <td><button className="btn btn-primary btn-sm">Pay Now</button></td>
-              </tr>
+              {fees.history.length === 0 && <tr><td colSpan="6" style={{textAlign:'center', color:'var(--text-muted)'}}>No fee records found.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -235,22 +210,36 @@ function FeesPage() {
   );
 }
 
-function MessagePage() {
+function MessagePage({ child, token }) {
   const [msg, setMsg] = useState('');
+  if (!child) return null;
+
+  const handleSend = async () => {
+      try {
+          await axios.post('http://localhost:5000/api/parent/message', { message: msg }, {
+              headers: { Authorization: `Bearer ${token}` }
+          });
+          alert('Message sent!');
+          setMsg('');
+      } catch (e) {
+          alert('Error sending message');
+      }
+  };
+
   return (
     <div className="fade-up">
-      <div className="page-header"><h2>💬 Message Teacher</h2><p>Send a message to {CHILD.name}'s teachers</p></div>
+      <div className="page-header"><h2>💬 Message Teacher</h2><p>Send a message to {child.name}'s teachers</p></div>
       <div className="glass-card" style={{ padding:24, maxWidth:520 }}>
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
           <div className="form-group">
             <label>Teacher / Subject</label>
-            <select className="input"><option>Sunita Sharma — Mathematics</option><option>Vikram Singh — Physics</option><option>Priya Gupta — English</option></select>
+            <select className="input"><option>Class Teacher</option></select>
           </div>
           <div className="form-group">
             <label>Your Message</label>
             <textarea className="input" rows={5} placeholder="Type your message…" value={msg} onChange={e=>setMsg(e.target.value)}/>
           </div>
-          <button className="btn btn-primary" disabled={!msg.trim()}><Icon name="message" size={15}/> Send Message</button>
+          <button className="btn btn-primary" disabled={!msg.trim()} onClick={handleSend}><Icon name="message" size={15}/> Send Message</button>
         </div>
       </div>
     </div>
@@ -259,41 +248,63 @@ function MessagePage() {
 
 export default function ParentDashboard() {
   const { user } = useAuth();
+  const token = localStorage.getItem('us_token');
   const [active, setActive] = useState('home');
+  const [children, setChildren] = useState([]);
+  const [activeChildIndex, setActiveChildIndex] = useState(0);
+
+  useEffect(() => {
+      if(token) {
+          axios.get('http://localhost:5000/api/parent/dashboard', { headers: { Authorization: `Bearer ${token}` } })
+          .then(res => setChildren(res.data.children))
+          .catch(console.error);
+      }
+  }, [token]);
+
+  const child = children[activeChildIndex];
+
   const titles = { home:'Parent Dashboard', attendance:'Attendance Calendar', performance:'Performance Report', fees:'Fee Management', messages:'Message Teacher' };
-  const subtitles = { home:`Monitoring: ${CHILD.name}`, attendance:'Month-wise tracking', performance:'Subject analytics', fees:'₹ INR · Payments', messages:'Direct communication' };
+  const subtitles = { home:`Monitoring: ${child?.name || '...'}`, attendance:'Month-wise tracking', performance:'Subject analytics', fees:'₹ INR · Payments', messages:'Direct communication' };
+  
   return (
-    <AppShell nav={NAV} active={active} setActive={setActive} title={titles[active]} subtitle={subtitles[active]} notifications={{ messages:1 }}>
-      {active==='home'        && <Home user={user}/>}
-      {active==='attendance'  && <AttCalendar/>}
-      {active==='fees'        && <FeesPage/>}
-      {active==='messages'    && <MessagePage/>}
-      {active==='performance' && (
-        <div className="fade-up">
-          <div className="page-header"><h2>📊 Subject Performance</h2><p>{CHILD.name} · Class {CHILD.class}</p></div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
-            {CHILD.subjects.map(s => (
-              <div key={s.name} className="glass-card" style={{ padding:20 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
-                  <h4 style={{ color:s.color }}>{s.name}</h4>
-                  <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:s.color }}>{s.score}%</span>
-                </div>
-                <div className="progress-bar" style={{ marginBottom:12 }}>
-                  <div className="progress-fill" style={{ width:`${s.score}%`, background:s.color }}/>
-                </div>
-                {s.topics.map(t => (
-                  <div key={t.t} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid var(--border)', fontSize:'.8rem' }}>
-                    <span style={{ color:'var(--text-secondary)' }}>{t.t}</span>
-                    <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-                      <div style={{ width:60 }}><div className="progress-bar"><div className={`progress-fill ${t.s>=75?'fill-green':t.s>=50?'fill-blue':'fill-rose'}`} style={{ width:`${t.s}%` }}/></div></div>
-                      <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:t.s>=75?'var(--green)':t.s>=50?'var(--amber)':'var(--rose)', width:36, textAlign:'right' }}>{t.s}%</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ))}
+    <AppShell nav={NAV} active={active} setActive={setActive} title={titles[active]} subtitle={subtitles[active]} notifications={{ messages:0 }}>
+      {children.length > 1 && (
+          <div style={{ display:'flex', gap:10, marginBottom:20 }}>
+              {children.map((c, i) => (
+                  <button key={c.id} className={`btn ${activeChildIndex === i ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setActiveChildIndex(i)}>
+                      {c.name}
+                  </button>
+              ))}
           </div>
-        </div>
+      )}
+      {children.length === 0 && <div className="glass-card fade-up" style={{ padding:40 }}><div className="empty-state"><div className="icon">👨‍👩‍👧</div><p>No children linked to this account.</p></div></div>}
+      
+      {child && (
+          <>
+            {active==='home'        && <Home user={user} child={child}/>}
+            {active==='attendance'  && <AttCalendar child={child}/>}
+            {active==='fees'        && <FeesPage child={child}/>}
+            {active==='messages'    && <MessagePage child={child} token={token}/>}
+            {active==='performance' && (
+              <div className="fade-up">
+                <div className="page-header"><h2>📊 Subject Performance</h2><p>{child.name}</p></div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                  {child.subjects.map(s => (
+                    <div key={s.name} className="glass-card" style={{ padding:20 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginBottom:12 }}>
+                        <h4 style={{ color:s.color || 'var(--blue)' }}>{s.name}</h4>
+                        <span style={{ fontFamily:'var(--font-mono)', fontWeight:700, color:s.color || 'var(--blue)' }}>{s.score}%</span>
+                      </div>
+                      <div className="progress-bar" style={{ marginBottom:12 }}>
+                        <div className="progress-fill" style={{ width:`${s.score}%`, background:s.color || 'var(--blue)' }}/>
+                      </div>
+                    </div>
+                  ))}
+                  {child.subjects.length === 0 && <span style={{color:'var(--text-muted)'}}>No recent marks.</span>}
+                </div>
+              </div>
+            )}
+          </>
       )}
     </AppShell>
   );

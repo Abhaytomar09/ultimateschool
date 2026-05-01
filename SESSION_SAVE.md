@@ -22,7 +22,7 @@
 ### `server/.env`
 ```
 PORT=5000
-MONGODB_URI=mongodb+srv://abhaytomar392004_db_user:Abhay392004@unmax0.xzitnnf.mongodb.net/myDatabase?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://abhaytomar392004_db_user:Abhay392004@unmax0.xzitnnf.mongodb.net/ultimateschool?retryWrites=true&w=majority
 JWT_SECRET=ultimateschool_super_secret_key_2025
 ```
 

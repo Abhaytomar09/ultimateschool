@@ -40,6 +40,12 @@ const UserSchema = new mongoose.Schema({
     classAssigned: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Class'
+    },
+    setPasswordToken: {
+        type: String,
+    },
+    setPasswordExpires: {
+        type: Date,
     }
 }, { timestamps: true });
 

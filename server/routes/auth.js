@@ -5,6 +5,7 @@ const {
     registerUser,
     loginUser,
     getSchoolByCode,
+    setPassword,
 } = require('../controllers/authController');
 const { protect, roleCheck } = require('../middleware/authMiddleware');
 
@@ -17,6 +18,9 @@ router.post('/login', loginUser);
 
 // Lookup school name by code (used by returning-user UI)
 router.get('/school/:code', getSchoolByCode);
+
+// Set Password using emailed token
+router.post('/set-password/:token', setPassword);
 
 // ── Protected Routes (Admin only) ─────────────────────────────────────────────
 // Register teachers / students / parents under the admin's school

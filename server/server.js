@@ -13,9 +13,19 @@ app.use(express.json());
 // ── Routes ─────────────────────────────────────────────────────────────────────
 const authRoutes   = require('./routes/auth');
 const schoolRoutes = require('./routes/schools');
+const demoRoutes = require('./routes/demo');
+const studentRoutes = require('./routes/student');
+const teacherRoutes = require('./routes/teacher');
+const parentRoutes = require('./routes/parent');
+const adminRoutes = require('./routes/admin');
 
 app.use('/api/auth',    authRoutes);
 app.use('/api/schools', schoolRoutes);
+app.use('/api/demo', demoRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/teacher', teacherRoutes);
+app.use('/api/parent', parentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/', (req, res) => res.send('UltimateSchool API is running.'));

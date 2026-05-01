@@ -9,6 +9,7 @@
 ## 🌟 Features
 
 - 🔐 **Role-Based Auth** — Admin, Teacher, Student, Parent (JWT)
+- 📧 **Secure Onboarding** — Automated email notifications with single-use, 24-hour setup links for new users
 - 📅 **Smart Timetable** — Auto-generate daily classes from a weekly schedule
 - ✅ **Attendance Tracking** — Session-based with network failure handling (75% rule)
 - 📝 **Assignments & Report Cards** — Full academic lifecycle

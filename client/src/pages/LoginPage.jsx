@@ -84,7 +84,11 @@ function SchoolSearch({ onSelect }) {
     useEffect(() => {
         const handler = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
         document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('touchstart', handler);
+        return () => {
+            document.removeEventListener('mousedown', handler);
+            document.removeEventListener('touchstart', handler);
+        };
     }, []);
 
     const handleSelect = (school) => {
@@ -119,7 +123,7 @@ function SchoolSearch({ onSelect }) {
                             key={s.schoolCode}
                             className="school-dropdown-item"
                             role="option"
-                            onMouseDown={() => handleSelect(s)}
+                            onClick={() => handleSelect(s)}
                         >
                             <span className="sdi-name">{s.name}</span>
                             <span className="sdi-code">{s.schoolCode}</span>
@@ -330,9 +334,27 @@ export default function LoginPage() {
                                 id={`demoBtn${r.label}`}
                                 type="button"
                                 className="btn btn-ghost btn-sm"
-                                onClick={() => {
+                                onClick={async () => {
                                     setSelectedSchool({ schoolCode:'SCH001', name:'Demo Public School' });
-                                    login(DEMO[r.id]);
+                                    setUserId(DEMO[r.id].customId);
+                                    setPassword('demo123');
+                                    setLoading(true);
+                                    try {
+                                        const res = await fetch(`${API}/api/auth/login`, {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ schoolCode: 'SCH001', userId: DEMO[r.id].customId, password: 'demo123' })
+                                        });
+                                        if (res.ok) {
+                                            login(await res.json());
+                                        } else {
+                                            setError('Demo login failed. Make sure server is running and seeded.');
+                                        }
+                                    } catch (err) {
+                                        setError('Cannot connect to server.');
+                                    } finally {
+                                        setLoading(false);
+                                    }
                                 }}
                             >
                                 {r.icon} {r.label}
